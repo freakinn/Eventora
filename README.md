@@ -1,83 +1,246 @@
 # Eventora - Full-Stack Event Booking Platform
 
-Eventora is a full-stack MERN application that allows users to seamlessly browse, register, and pay natively without any third party tools. It features an administrative dashboard for event organizers to create and manage free and paid events. All bookings can be managed manually by an admin to handle payments directly.
+Eventora is a MERN event booking application where users can browse events, verify their accounts with email OTP, submit booking requests, and track booking status. Admin users can create and manage events, review booking requests, confirm bookings, and mark payment status manually.
 
 ## Features
-- **User Authentication**: Secure login & registration with JWT and bcrypt.
-- **2FA OTP Verification**: 
-  - Mandatory Email OTP to activate your account upon Registration (or delayed login attempts).
-  - Mandatory Email OTP to finalize and secure event ticket booking.
-- **Role-Based Access**: 
-  - **Admin**: Create, edit, and delete events. Confirm and reject all incoming booking requests, mark them as 'Paid' or 'Not Paid'. Access is strictly locked to database-flagged users only.
-  - **User**: Browse events, submit ticket booking requests via OTP, view personal dashboard pending status, and cancel bookings.
-- **Event Management**: Create free and paid events with detailed descriptions, external image URLs, dates, categories, and seating capacity.
-- **Smart Booking System**:
-  - Mandatory 2FA OTP to authorize a booking request.
-  - All booking requests (both free and paid) enter a secure 'Pending' queue for Admin verification.
-  - Seat availability accurately updates and securely validates against overbooking logic.
-- **Admin Analytics Dashboard**: Track live data such as Pending Requests, Total Revenue, and Total Confirmed Paid Clients directly from the admin panel.
-- **Email Notifications**: Automated email delivery upon successful booking confirmation using Nodemailer.
-- **Sleek UI/UX**: Built entirely with React, Tailwind CSS, and polished with micro-interactions.
 
----
+- User registration and login with JWT authentication.
+- Email OTP verification for account activation.
+- Email OTP verification before event booking.
+- Role-based access for users and admins.
+- Event CRUD for admins.
+- Booking request flow with pending, confirmed, and cancelled statuses.
+- Manual payment tracking for free and paid events.
+- Admin dashboard data for bookings, revenue, and attendance.
+- Email notifications through Nodemailer.
 
-## 🚀 Setup Instructions
+## Project Setup
 
 ### Prerequisites
-Make sure you have [Node.js](https://nodejs.org/) installed on your machine.
-You will also need a MongoDB database (e.g., [MongoDB Atlas Free Tier](https://www.mongodb.com/cloud/atlas/register)).
 
-### 1. Environment Variables Configuration
-Navigate to `server/.env` and fill in the necessary keys:
-```env
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=supersecretjwtkey_eventora
-EMAIL_USER=your_gmail_address
-EMAIL_PASS=your_gmail_app_password
-PORT=5000
-```
-> **Note**: For `EMAIL_PASS`, you need to generate an "App Password" from your Google Account settings, standard passwords won't work due to 2FA.
+- Node.js and npm
+- MongoDB database, either local MongoDB or MongoDB Atlas
+- Email account credentials for SMTP. Gmail requires an app password.
 
-### 2. Run from Outer Folder (Single Terminal)
-You can now manage both backend and frontend from the project root:
+### Install dependencies
+
+From the repository root:
 
 ```bash
-# from Eventora root
 npm install
 npm run install:all
-npm run dev
 ```
 
-- `npm run dev` starts both `server` and `client` together using `concurrently`.
-- `npm run dev:all` installs dependencies (server + client) and starts both in one command.
-- `npm run start` runs backend `start` + frontend `preview` together.
+This installs root tooling plus dependencies for both `server` and `client`.
 
-### 3. Install Dependencies
-Open two separate terminals for the backend and frontend.
+### Configure environment variables
 
-**Backend Terminal:**
+Create `server/.env`:
+
+```env
+MONGO_URI=mongodb://localhost:27017/eventora
+JWT_SECRET=replace_with_a_long_random_secret
+EMAIL_USER=your_email@example.com
+EMAIL_PASS=your_email_app_password
+PORT=5000
+```
+
+Create `client/.env` for local development:
+
+```env
+VITE_API_URL=http://localhost:5000/api
+```
+
+### Seed demo data
+
+Optional, but useful for local testing:
+
 ```bash
 cd server
-npm install --legacy-peer-deps
+npm run seed
 ```
 
-**Frontend Terminal:**
+The seed script creates demo users, an admin account, events, and sample bookings.
+
+Demo credentials:
+
+- Admin: `admin@eventora.com`
+- User: `user@eventora.com`
+- Password for seeded users: `password123`
+
+### Run locally
+
+From the repository root, start both apps:
+
 ```bash
-cd client
-npm install
+npm run dev
 ```
 
-### 4. Run the Application Local Servers
-**Run Backend:**
+The backend runs on `http://localhost:5000` by default. The frontend runs on the Vite dev URL, typically `http://localhost:5173`.
+
+You can also run them separately:
+
 ```bash
 cd server
 npm run dev
 ```
-*(Server will run on `http://localhost:5000`)*
 
-**Run Frontend:**
 ```bash
 cd client
 npm run dev
 ```
-*(Client will run on a local port provided by Vite, typically `http://localhost:5173`)*
+
+### Build frontend
+
+```bash
+npm run build
+```
+
+## Environment Variables
+
+### Server
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `MONGO_URI` | Yes in production | MongoDB connection string. Local development falls back to `mongodb://localhost:27017/eventora` if omitted. |
+| `JWT_SECRET` | Yes | Secret used to sign and verify JWT access tokens. |
+| `EMAIL_USER` | Yes for OTP/email flows | Email account used by Nodemailer as the sender. |
+| `EMAIL_PASS` | Yes for OTP/email flows | Email password or provider app password. |
+| `PORT` | No | Backend port. Defaults to `5000`. |
+| `NODE_ENV` | No | When set to `production`, the server exports the app for deployment instead of starting a local listener. |
+
+### Client
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| `VITE_API_URL` | Recommended | API base URL. Use `http://localhost:5000/api` locally. If omitted, the app currently falls back to the deployed backend URL configured in `client/src/utils/axios.js`. |
+
+## API Documentation
+
+Base URL for local development:
+
+```text
+http://localhost:5000/api
+```
+
+Protected endpoints require this header:
+
+```text
+Authorization: Bearer <jwt_token>
+```
+
+A Postman collection is included at `Eventora_Postman_Collection.json`.
+
+### Health
+
+| Method | Endpoint | Auth | Description |
+| --- | --- | --- | --- |
+| `GET` | `/` | No | Returns API health message. |
+
+### Auth
+
+| Method | Endpoint | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/auth/register` | No | Registers a user and sends account verification OTP. |
+| `POST` | `/api/auth/login` | No | Logs in a verified user and returns a JWT. Unverified users receive a verification-required response. |
+| `POST` | `/api/auth/verify-otp` | No | Verifies account OTP and returns a JWT. |
+
+Register body:
+
+```json
+{
+  "name": "Demo User",
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+Login body:
+
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+
+Verify OTP body:
+
+```json
+{
+  "email": "user@example.com",
+  "otp": "123456"
+}
+```
+
+### Events
+
+| Method | Endpoint | Auth | Description |
+| --- | --- | --- | --- |
+| `GET` | `/api/events` | No | Lists events. Supports `category` and `search` query params. |
+| `GET` | `/api/events/:id` | No | Returns one event by ID. |
+| `POST` | `/api/events` | Admin | Creates an event. |
+| `PUT` | `/api/events/:id` | Admin | Updates an event. |
+| `DELETE` | `/api/events/:id` | Admin | Deletes an event. |
+
+Create event body:
+
+```json
+{
+  "title": "Tech Conference",
+  "description": "A full-day developer conference.",
+  "date": "2026-08-15T10:00:00.000Z",
+  "location": "Mumbai",
+  "category": "Technology",
+  "totalSeats": 100,
+  "ticketPrice": 500,
+  "image": "https://example.com/event.jpg"
+}
+```
+
+### Bookings
+
+| Method | Endpoint | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/bookings/send-otp` | User/Admin | Sends an OTP for booking confirmation. |
+| `POST` | `/api/bookings` | User/Admin | Creates a pending booking after validating booking OTP. |
+| `GET` | `/api/bookings/my` | User/Admin | Returns the current user's bookings. Admins receive all bookings. |
+| `PUT` | `/api/bookings/:id/confirm` | Admin | Confirms a booking, sets payment status, deducts one available seat, and emails the user. |
+| `DELETE` | `/api/bookings/:id` | Owner/Admin | Cancels a booking. Confirmed cancellations restore one seat. |
+
+Create booking body:
+
+```json
+{
+  "eventId": "event_mongodb_id",
+  "otp": "123456"
+}
+```
+
+Confirm booking body:
+
+```json
+{
+  "paymentStatus": "paid"
+}
+```
+
+`paymentStatus` can be `paid` or `not_paid`.
+
+## Assumptions
+
+- Users cannot self-register as admins. The register controller always creates `user` accounts; admin users must be seeded or updated directly in the database.
+- OTP codes are sent by email and expire after 5 minutes.
+- Payments are handled outside the application. Eventora only records whether an admin marked a booking as `paid` or `not_paid`.
+- A booking starts as `pending`; seats are deducted only when an admin confirms the booking.
+- The frontend expects the API URL to include `/api`, for example `http://localhost:5000/api`.
+- CORS is currently limited to the local Vite URL and the configured deployed frontend URL in `server/server.js`.
+
+## Design Decisions
+
+- The app is split into separate `client` and `server` packages, with root scripts using `concurrently` for local full-stack development.
+- Express controllers keep route definitions small and separate auth, event, and booking behavior.
+- MongoDB models use Mongoose references so events can include creator data and bookings can populate user/event details.
+- JWT is used for stateless API authentication, while role checks are handled by reusable middleware.
+- OTP documents use a MongoDB TTL index through the `expires` schema option to automatically remove expired codes.
+- Bookings use an admin approval workflow so free and paid events follow the same verification and capacity-management path.
